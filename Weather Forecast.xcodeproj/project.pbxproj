@@ -30,7 +30,6 @@
 		ACBF222D1FE9614A008DE529 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ACBF22301FE9614A008DE529 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ACBF22321FE9614A008DE529 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		DC0BCA2D32E9F4082D832EE2 /* Pods_Weather_Forecast.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Weather_Forecast.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,7 +46,6 @@
 		82A71C6079A21AC407E5C6BB /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				DC0BCA2D32E9F4082D832EE2 /* Pods_Weather_Forecast.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
