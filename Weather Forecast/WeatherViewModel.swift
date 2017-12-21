@@ -8,11 +8,31 @@
 
 import UIKit
 
-class WeatherViewModel: NSObject {
+protocol WeatherViewModelProtocol: NSObjectProtocol {
+    func weatherForecastFetchSucceded()
+    func weatherForecastFetchFailed(errorDescription:String)
+}
+
+protocol CellRepresentable {
+    func cellInstance(_ tableView: UITableView,_ indexPath: IndexPath) -> UITableViewCell
+}
+
+extension Date {
+    func getTimeStampwithFormat(_ format:String)->String{
+        let dateFormat = format
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = dateFormat
+        let dateStr = dateFormatter.string(from: self)
+        return dateStr
+    }
+}
+
+class WeatherViewModel: NSObject, CellRepresentable {
     
     var weatherObjects:[Weather]!
     var groupedDataItems:Dictionary<String, [Weather]>!
     var days:[String] = Array()
+    weak var weatherViewModelProtocol:WeatherViewModelProtocol?
     
     override init() {
         
@@ -36,35 +56,28 @@ class WeatherViewModel: NSObject {
         }
     }
     
-    func updateCellWithIndexPath(indexPath:IndexPath, cell:WeatherCell) {
-        
+    
+    func cellInstance(_ tableView: UITableView, _ indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "WeatherCell") as! WeatherCell
+        cell.selectionStyle = .none
         if let dayData = groupedDataItems[days[indexPath.section]] {
             let weather = dayData[indexPath.row]
-            cell.weatherDescriptionLabel.text = weather.weatherDescription.capitalized
-            cell.temperatureLabel.text = "Temperature: " + "\(weather.temperature!)" + " kelvin"
-            cell.pressureLabel.text = "Pressue: " + "\(weather.pressure!)" + " hpa"
-            cell.humidityLabel.text = "Humidity: " + "\(weather.humidity!)" + "%"
-            cell.windSpeedLabel.text = "Wind Speed: " + "\(weather.windSpeed!)" + " meter/sec"
-            
-            cell.timeLabel.text = getTimeStampFrom(date: weather.date, withFormat: "h:mm a")
+            cell.updateCellWith(weather)
+        }else{
+            cell.clearData()
         }
         
-    }
-    
-    func getTimeStampFrom(date:Date, withFormat format:String)->String{
-        let dateFormat = format
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = dateFormat
-        let dateStr = dateFormatter.string(from: date)
-        return dateStr
+        return cell
     }
     
     func setUpDataItems(){
+        groupedDataItems = nil
+        days.removeAll()
         
         groupedDataItems = Dictionary()
         
         for item in self.weatherObjects {
-            let dateStr = getTimeStampFrom(date: item.date, withFormat: "E MMM yyyy")
+            let dateStr = item.date.getTimeStampwithFormat("E MMM yyyy")
             
             if !days.contains(dateStr) {
                 days.append(dateStr)
@@ -77,7 +90,38 @@ class WeatherViewModel: NSObject {
             }else{
                 groupedDataItems[dateStr] = [item]
             }
-            
+        }
+    }
+}
+
+extension WeatherViewModel {
+    
+    func getWeatherForecast(searchStr:String){
+        
+        let serviceLayer = ServiceLayer()
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
+        serviceLayer.getWeatherForecast(cityName: searchStr) { [unowned self] (weatherObjs, error) in
+            if let weatherObjs = weatherObjs {
+                self.weatherObjects = weatherObjs
+                self.setUpDataItems()
+                DispatchQueue.main.async {
+                    if let weatherViewModelProtocol = self.weatherViewModelProtocol {
+                        weatherViewModelProtocol.weatherForecastFetchSucceded()
+                    }
+                }
+            }else if error != nil {
+                if let weatherViewModelProtocol = self.weatherViewModelProtocol {
+                    weatherViewModelProtocol.weatherForecastFetchFailed(errorDescription: error?.localizedDescription ?? "")
+                }
+                
+            }else{
+                if let weatherViewModelProtocol = self.weatherViewModelProtocol {
+                    weatherViewModelProtocol.weatherForecastFetchFailed(errorDescription: "Unable to fetch results for provided location.")
+                }
+            }
+            DispatchQueue.main.async {
+                UIApplication.shared.isNetworkActivityIndicatorVisible = false
+            }
         }
         
     }

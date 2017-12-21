@@ -18,6 +18,7 @@ class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         weatherViewModel = WeatherViewModel()
+        weatherViewModel.weatherViewModelProtocol = self
         
         table.estimatedRowHeight = 100
         table.rowHeight = UITableViewAutomaticDimension
@@ -68,12 +69,9 @@ extension HomeViewController:UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "WeatherCell") as! WeatherCell
-        cell.selectionStyle = .none
-        cell.clearData()
-        weatherViewModel?.updateCellWithIndexPath(indexPath: indexPath, cell: cell)
         
-        return cell
+        return weatherViewModel.cellInstance(tableView, indexPath)
+        
     }
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         
@@ -87,43 +85,40 @@ extension HomeViewController:UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         let searchStr = searchBar.text
         if let searchStr = searchStr, searchStr.count > 0  {
-            getWeatherForecast(searchStr: searchStr)
+            weatherViewModel.getWeatherForecast(searchStr: searchStr)
         }
         searchBar.resignFirstResponder()
     }
 }
 
-//MARK: Service calls
-extension HomeViewController {
+
+//MARK: WeatherViewModelProtocol Methods
+extension HomeViewController:WeatherViewModelProtocol {
     
-    func getWeatherForecast(searchStr:String){
-        
-        let serviceLayer = ServiceLayer()
-        UIApplication.shared.isNetworkActivityIndicatorVisible = true
-        serviceLayer.getWeatherForecast(cityName: searchStr) { (weatherObjs, error) in
-            if let weatherObjs = weatherObjs {
-                self.weatherViewModel =  nil
-                self.weatherViewModel = WeatherViewModel(weatherObjs: weatherObjs)
-                DispatchQueue.main.async {
-                    self.table.reloadData()
-                }
-            }else if error != nil {
-                self.showError(message: error?.localizedDescription ?? "")
-            }else{
-                self.showError(message: "Unable to fetch results for provided location.")
-            }
-            DispatchQueue.main.async {
-                UIApplication.shared.isNetworkActivityIndicatorVisible = false
-            }
+    func weatherForecastFetchSucceded() {
+        self.table.reload {
+            self.table.setContentOffset(CGPoint.zero, animated: false)
         }
-        
     }
     
-    func showError(message:String){
-        let alertController = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+    func weatherForecastFetchFailed(errorDescription: String) {
+        let alertController = UIAlertController(title: "Error", message: errorDescription, preferredStyle: .alert)
         let okAction = UIAlertAction(title: "Ok", style: .cancel, handler: nil)
         alertController.addAction(okAction)
         self.present(alertController, animated: true, completion: nil)
-        
     }
 }
+
+extension UITableView {
+
+    func reload(onCompletion:@escaping ()->()){
+
+        UIView.animate(withDuration: 0, animations: {
+            self.reloadData()
+        }) { (status) in
+            onCompletion()
+        }
+    }
+
+}
+

@@ -39,5 +39,17 @@ class WeatherCell: UITableViewCell {
         self.timeLabel.text = ""
         
     }
+
+
+    func updateCellWith(_ weather:Weather) {
+
+        weatherDescriptionLabel.text = weather.weatherDescription.capitalized
+        temperatureLabel.text = "Temperature: " + "\(weather.temperature!)" + " kelvin"
+        pressureLabel.text = "Pressue: " + "\(weather.pressure!)" + " hpa"
+        humidityLabel.text = "Humidity: " + "\(weather.humidity!)" + "%"
+        windSpeedLabel.text = "Wind Speed: " + "\(weather.windSpeed!)" + " meter/sec"
+        timeLabel.text = weather.date.getTimeStampwithFormat("h:mm a")
+
+    }
     
 }

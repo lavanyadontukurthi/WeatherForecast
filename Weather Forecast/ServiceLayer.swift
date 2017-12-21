@@ -16,8 +16,7 @@ class ServiceLayer: NSObject {
         
         let urlSession = URLSession.shared
         let urlStr = "http://api.openweathermap.org/data/2.5/forecast?q=\(cityName)&appid=\(appId)"
-        
-        
+
         if let str = urlStr.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) {
             guard let url = URL(string: str) else{
                 onCompletion(nil, nil)
@@ -32,20 +31,15 @@ class ServiceLayer: NSObject {
                 }else{
                     onCompletion(nil, error)
                 }
-
-
             }
             dataTask.resume()
         }else{
             onCompletion(nil, nil)
         }
-        
     }
     
     func parseWeatherResponse(data:Data)->[Weather]?{
         var weatherObjects:[Weather]?
-        
-        
         if let weatherData = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? Dictionary<String, AnyObject> {
             
             if let weatherData = weatherData, let list = weatherData["list"] as? [Dictionary<String, AnyObject>] {
@@ -57,12 +51,9 @@ class ServiceLayer: NSObject {
                         weatherObjects?.append(weather)
                     }
                 }
-                
                 weatherObjects!.sort(by: { $0.date.compare($1.date) == .orderedAscending})
             }
-            
         }
         return weatherObjects
     }
-    
 }
